@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loot Spinner Pro</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background:
+      radial-gradient(circle at top, rgba(59,130,246,0.2), transparent 30%),
+      linear-gradient(135deg, #020617, #0f172a 45%, #111827);
+    color: #e5e7eb;
+    min-height: 100vh;
+    padding: 24px;
+    overflow-x: hidden;
+    position: relative;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .15;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 36px 36px;
+  }
+  body.shake-screen { animation: screenShake .45s ease-in-out; }
+  body.special-spin-mode {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(168,85,247,.22), transparent 0 28%),
+      radial-gradient(circle at 50% 100%, rgba(91,33,182,.18), transparent 0 34%),
+      linear-gradient(180deg, #02010a, #090312 42%, #13061f 100%);
+  }
+  body.special-spin-mode::before {
+    opacity: .5;
+    background-image:
+      linear-gradient(rgba(216,180,254,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(216,180,254,.04) 1px, transparent 1px);
+  }
+  .container { max-width: 980px; margin: 0 auto; position: relative; }
+  .hero, .panel {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+  }
+  .hero { padding: 28px; margin-bottom: 18px; }
+  h1 { margin: 0 0 8px; font-size: 34px; }
+  .sub { color: #94a3b8; line-height: 1.5; }
+  .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+  .panel { padding: 22px; position: relative; overflow: hidden; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  button {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+  }
+  button:hover { transform: translateY(-1px); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .btn-main { background: linear-gradient(135deg,#facc15,#f59e0b); color:#111827; box-shadow: 0 10px 20px rgba(245,158,11,.25); }
+  .btn-reset { background: #ef4444; color: white; }
+  .btn-export { background: #3b82f6; color: white; }
+  .btn-sound { background: #22c55e; color: #052e16; }
+  .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+  .slot {
+    background: linear-gradient(180deg, rgba(30,41,59,.95), rgba(15,23,42,.95));
+    border: 1px solid rgba(148,163,184,.2);
+    border-radius: 20px;
+    padding: 16px;
+    min-height: 154px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  .slot::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    pointer-events: none;
+  }
+  .slot::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: radial-gradient(circle, rgba(255,255,255,0.16), transparent 45%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+  }
+  .slot-label { color: #94a3b8; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+  .slot-window {
+    margin-top: 12px;
+    height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1.25;
+    padding: 0 8px;
+    position: relative;
+    z-index: 2;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .weapon-icon { font-size: 22px; filter: drop-shadow(0 0 8px rgba(255,255,255,.15)); }
+  .slot.spinning .slot-window { animation: pulse .35s linear infinite; }
+  .slot.active { border-color: rgba(250,204,21,.7); box-shadow: 0 0 0 1px rgba(250,204,21,.22), 0 0 30px rgba(250,204,21,.15); }
+  .slot.rarity-common { border-color: rgba(148,163,184,.35); box-shadow: 0 0 0 1px rgba(148,163,184,.18), 0 0 24px rgba(148,163,184,.08); }
+  .slot.rarity-rare { border-color: rgba(250,204,21,.7); box-shadow: 0 0 0 1px rgba(250,204,21,.28), 0 0 34px rgba(250,204,21,.18); }
+  .slot.rarity-epic {
+    border-color: rgba(168,85,247,.75);
+    box-shadow: 0 0 0 1px rgba(168,85,247,.24), 0 0 44px rgba(168,85,247,.24);
+  }
+  body.special-spin-mode .slot {
+    background:
+      radial-gradient(circle at top, rgba(216,180,254,.08), transparent 30%),
+      linear-gradient(180deg, rgba(20,8,32,.98), rgba(8,3,18,.96));
+  }
+  body.special-spin-mode .slot.rarity-epic {
+    border-color: rgba(216,180,254,.9);
+    box-shadow: 0 0 0 1px rgba(216,180,254,.22), 0 0 54px rgba(168,85,247,.34);
+  }
+  .slot.rarity-rare::after, .slot.rarity-epic::after { opacity: 1; }
+  .slot.epic-burst { animation: epicFlash .9s ease-out; }
+  .slot.final-lock { animation: lockImpact .45s ease-out; }
+  .epic-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 20;
+    background:
+      radial-gradient(circle at center, rgba(196,181,253,.55), transparent 18%),
+      radial-gradient(circle at center, rgba(168,85,247,.28), transparent 36%),
+      radial-gradient(circle at center, rgba(255,255,255,.16), transparent 55%);
+  }
+  .epic-overlay.show { animation: overlayBlast .95s ease-out; }
+  .epic-overlay.special {
+    background:
+      radial-gradient(circle at center, rgba(196,181,253,.68), transparent 16%),
+      radial-gradient(circle at center, rgba(109,40,217,.42), transparent 34%),
+      radial-gradient(circle at center, rgba(0,0,0,.24), transparent 58%);
+  }
+  .dark-flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 18;
+    opacity: 0;
+    background: rgba(3, 1, 20, 0.55);
+  }
+  .dark-flash.show { animation: darkPulse .9s ease-out; }
+  .dark-flash.special { background: rgba(2, 0, 10, 0.74); }
+  .particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 21;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    opacity: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.95), rgba(216,180,254,0.9) 45%, rgba(168,85,247,0) 70%);
+    box-shadow: 0 0 14px rgba(216,180,254,.6);
+    animation: particleFly 1.1s ease-out forwards;
+  }
+  .particle.special {
+    background: radial-gradient(circle, rgba(255,255,255,0.98), rgba(233,213,255,0.95) 35%, rgba(126,34,206,0.72) 58%, rgba(0,0,0,0) 74%);
+    box-shadow: 0 0 22px rgba(216,180,254,.92), 0 0 42px rgba(168,85,247,.42);
+  }
+  .epic-drop-banner {
+    position: fixed;
+    left: 50%;
+    top: 8%;
+    transform: translateX(-50%) translateY(-180px) scale(.85);
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0;
+    padding: 16px 28px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(126,34,206,.92), rgba(168,85,247,.92));
+    border: 1px solid rgba(216,180,254,.6);
+    box-shadow: 0 0 30px rgba(168,85,247,.28);
+    color: white;
+    font-weight: 900;
+    letter-spacing: .18em;
+    font-size: 28px;
+    text-transform: uppercase;
+  }
+  .epic-drop-banner.show { animation: epicDropIn 1.2s ease-out; }
+  .epic-drop-banner.special {
+    background: linear-gradient(135deg, rgba(36,0,60,.96), rgba(126,34,206,.96));
+    border-color: rgba(233,213,255,.8);
+    box-shadow: 0 0 42px rgba(168,85,247,.38);
+    letter-spacing: .24em;
+  }
+  .reward-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 31;
+    opacity: 0;
+  }
+  .reward-modal.show { opacity: 1; }
+  .reward-modal.special .reward-card {
+    background: linear-gradient(180deg, rgba(49,12,84,.98), rgba(14,4,28,.98));
+    border-color: rgba(233,213,255,.7);
+    box-shadow: 0 0 54px rgba(168,85,247,.42);
+  }
+  .reward-card {
+    min-width: 320px;
+    max-width: 90vw;
+    background: linear-gradient(180deg, rgba(88,28,135,.96), rgba(30,27,75,.98));
+    border: 1px solid rgba(216,180,254,.55);
+    border-radius: 26px;
+    padding: 22px 24px;
+    box-shadow: 0 0 40px rgba(168,85,247,.35);
+    transform: scale(.55) translateY(40px);
+    opacity: 0;
+  }
+  .reward-modal.show .reward-card { animation: rewardPop .95s ease-out forwards; }
+  .reward-top { font-size: 13px; letter-spacing: .18em; color: #d8b4fe; font-weight: 800; }
+  .reward-name {
+    margin-top: 10px;
+    font-size: 30px;
+    font-weight: 900;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    text-align:center;
+  }
+  .reward-meta { margin-top: 10px; color: #e9d5ff; text-align:center; line-height:1.5; }
+  @keyframes pulse {
+    0% { transform: translateY(0); opacity: .6; }
+    50% { transform: translateY(-2px); opacity: 1; }
+    100% { transform: translateY(0); opacity: .6; }
+  }
+  @keyframes screenShake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+  }
+  @keyframes lockImpact {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  @keyframes epicFlash {
+    0% { transform: scale(1); filter: brightness(1); }
+    25% { transform: scale(1.04); filter: brightness(1.35); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  @keyframes overlayBlast {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes darkPulse {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    60% { opacity: .35; }
+    100% { opacity: 0; }
+  }
+  @keyframes particleFly {
+    0% { opacity: 0; transform: translate(0, 0) scale(.5); }
+    12% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(1.35); }
+  }
+  @keyframes epicDropIn {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-180px) scale(.85); }
+    30% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.05); }
+    60% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(1); }
+  }
+  @keyframes rewardPop {
+    0% { opacity: 0; transform: scale(.55) translateY(40px); }
+    35% { opacity: 1; transform: scale(1.05) translateY(0); }
+    60% { opacity: 1; transform: scale(.98) translateY(0); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .final-result {
+    margin-top: 18px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(2,6,23,.65);
+    border: 1px dashed rgba(148,163,184,.25);
+  }
+  .final-result .title { font-size: 13px; color: #94a3b8; font-weight: 700; letter-spacing: .08em; }
+  .final-result .value {
+    margin-top: 8px;
+    font-size: 20px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .rarity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .rarity-common { background: rgba(148,163,184,.18); color: #cbd5e1; border: 1px solid rgba(148,163,184,.35); }
+  .rarity-rare { background: rgba(250,204,21,.18); color: #fde68a; border: 1px solid rgba(250,204,21,.35); }
+  .rarity-epic { background: rgba(168,85,247,.18); color: #d8b4fe; border: 1px solid rgba(168,85,247,.4); box-shadow: 0 0 20px rgba(168,85,247,.15); }
+  .history-list { margin-top: 12px; max-height: 540px; overflow: auto; display: grid; gap: 10px; }
+  .history-item { background: rgba(2,6,23,.55); border: 1px solid rgba(148,163,184,.15); border-radius: 16px; padding: 12px 14px; }
+  .history-item .text { font-weight: 700; line-height: 1.45; }
+  .history-item .meta {
+    margin-top: 6px;
+    color: #94a3b8;
+    font-size: 12px;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+  }
+  .empty { color: #94a3b8; padding: 14px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .legend span {
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(148,163,184,.2);
+    background: rgba(2,6,23,.4);
+  }
+  .slot-common { color: #e5e7eb; text-shadow: 0 0 12px rgba(148,163,184,.12); }
+  .slot-rare { color: #fde68a; text-shadow: 0 0 18px rgba(250,204,21,.28); }
+  .slot-epic { color: #d8b4fe; text-shadow: 0 0 20px rgba(168,85,247,.4); }
+  .status { margin-top: 12px; color: #93c5fd; min-height: 20px; font-size: 14px; }
+  @media (max-width: 860px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .slots { grid-template-columns: 1fr; }
+    .epic-drop-banner { font-size: 20px; padding: 14px 22px; }
+    .reward-card { min-width: 280px; }
+    .reward-name { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div id="darkFlash" class="dark-flash"></div>
+<div id="epicOverlay" class="epic-overlay"></div>
+<div id="particles" class="particles"></div>
+<div id="epicBanner" class="epic-drop-banner">EPIC DROP</div>
+<div id="rewardModal" class="reward-modal">
+  <div class="reward-card">
+    <div class="reward-top">BẤT NGỜ CHƯA CON</div>
+    <div id="rewardName" class="reward-name">💎 TÊN VŨ KHÍ</div>
+    <div id="rewardMeta" class="reward-meta">Thông tin nhận thưởng</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <h1>🎰 RANDOM WHEEL PRENIUM</h1>
+    <div class="sub">
+      Đây là vòng quay phục vụ cho sản xuất video. Được xây dựng với mục đích giải trí. Build by <b>BigShark</b>
+    </div>
+    <div class="controls">
+      <button id="rollBtn" class="btn-main" onclick="roll()">Bắt đầu quay</button>
+      <button class="btn-reset" onclick="resetHistory()">Reset</button>
+      <button class="btn-export" onclick="exportData()">Export kết quả</button>
+      <button id="soundBtn" class="btn-sound" onclick="toggleSound()">Âm thanh: Bật</button>
+    </div>
+    <div class="legend">
+      <span>Quay thường</span>
+      <span>Epic đặc biệt: 6%</span>
+      <span>Không trùng 10 lượt gần nhất</span>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="slots">
+        <div id="slot1" class="slot">
+          <div class="slot-label">VÒNG 1</div>
+          <div id="slot1Text" class="slot-window">Sẵn sàng</div>
+        </div>
+        <div id="slot2" class="slot">
+          <div class="slot-label">VÒNG 2</div>
+          <div id="slot2Text" class="slot-window">Chờ V1</div>
+        </div>
+        <div id="slot3" class="slot">
+          <div class="slot-label">VÒNG 3</div>
+          <div id="slot3Text" class="slot-window">Chờ V2</div>
+        </div>
+      </div>
+
+      <div class="status" id="statusText">Hãy bấm Bắt đầu quay.</div>
+
+      <div class="final-result">
+        <div class="title">KẾT QUẢ CUỐI</div>
+        <div id="resultText" class="value">Chưa có kết quả</div>
+        <div id="rarityBadge" class="rarity-badge rarity-common">Common</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size: 20px; font-weight: 800;">Lịch sử quay</div>
+      <div style="margin-top: 6px; color: #94a3b8; font-size: 14px;">Hiển thị 50 lượt gần nhất.</div>
+      <div id="history" class="history-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const lootData = {
+  "TRINH SÁT": {
+    "LUNA": ["K416","MARLIN LEVER","AKS-74","SHOT 2 NÒNG","CAR-15","UZI","BIZON","MINI-14","SMG-45","AWM","SG552","SVD","SHOT M1014","PSG-1","SHOT M1870","PTR-32","AUG","SR9","SHOT S12K","SV-98","M700","VSS","M16A4","SR-25","R93","SKS","SCAR-H"],
+    "HACKCLAW": ["K416","MARLIN LEVER","AKS-74","SHOT 2 NÒNG","CAR-15","UZI","BIZON","MINI-14","SMG-45","AWM","SG552","SVD","SHOT M1014","PSG-1","SHOT M1870","PTR-32","AUG","SR9","SHOT S12K","SV-98","M700","VSS","M16A4","SR-25","R93","SKS","SCAR-H"],
+    "RAPTOR": ["K416","MARLIN LEVER","AKS-74","SHOT 2 NÒNG","CAR-15","UZI","BIZON","MINI-14","SMG-45","AWM","SG552","SVD","SHOT M1014","PSG-1","SHOT M1870","PTR-32","AUG","SR9","SHOT S12K","SV-98","M700","VSS","M16A4","SR-25","R93","SKS","SCAR-H"]
+  },
+  "XUNG KÍCH": {
+    "D-WOLF": ["AK-12","SG552","SHOT 2 NÒNG","PTR-32","KC17","AS VAL","SHOT M1870","SKS","K416","SHOT M1014","QBZ96-1","M16A4","AKM","AKS-74","CI-19","M4A1","CAR-15","M7","K437","SHOT S12K"],
+    "NOX": ["AK-12","SG552","SHOT 2 NÒNG","PTR-32","KC17","AS VAL","SHOT M1870","SKS","K416","SHOT M1014","QBZ96-1","M16A4","AKM","AKS-74","CI-19","M4A1","CAR-15","M7","K437","SHOT S12K"],
+    "VYRON": ["AK-12","SG552","SHOT 2 NÒNG","PTR-32","KC17","AS VAL","SHOT M1870","SKS","K416","SHOT M1014","QBZ96-1","M16A4","AKM","AKS-74","CI-19","M4A1","CAR-15","M7","K437","SHOT S12K"],
+    "TEMPEST": ["AK-12","SG552","SHOT 2 NÒNG","PTR-32","KC17","AS VAL","SHOT M1870","SKS","K416","SHOT M1014","QBZ96-1","M16A4","AKM","AKS-74","CI-19","M4A1","CAR-15","M7","K437","SHOT S12K"]
+  },
+  "HỖ TRỢ": {
+    "STINGER": ["SR-3M","SHOT M1014","BIZON","P90","UZI","KC17","MP7","SMG-45","SHOT 2 NÒNG","VITYAZ","SHOT M1870","CAR-15","K416","QCQ171","AKS-74","SHOT S12K","M16A4","VECTOR","MP5"],
+    "TOXIK": ["SR-3M","SHOT M1014","BIZON","P90","UZI","KC17","MP7","SMG-45","SHOT 2 NÒNG","VITYAZ","SHOT M1870","CAR-15","K416","QCQ171","AKS-74","SHOT S12K","M16A4","VECTOR","MP5"],
+    "VLINGDER": ["SR-3M","SHOT M1014","BIZON","P90","UZI","KC17","MP7","SMG-45","SHOT 2 NÒNG","VITYAZ","SHOT M1870","CAR-15","K416","QCQ171","AKS-74","SHOT S12K","M16A4","VECTOR","MP5"]
+  },
+  "KỸ SƯ": {
+    "SHEPHERP": ["M249","AKS-74","M16A4","G3","SCAR-H","AUG","AK-12","SHOT 2 NÒNG","SHOT M1014","PKM","SHOT S12K","M250","ASH-12","QBZ95-1","SHOT M1870","M7","M14","CAR-15","MK47","QJB201"],
+    "ULURU": ["M249","AKS-74","M16A4","G3","SCAR-H","AUG","AK-12","SHOT 2 NÒNG","SHOT M1014","PKM","SHOT S12K","M250","ASH-12","QBZ95-1","SHOT M1870","M7","M14","CAR-15","MK47","QJB201"],
+    "SINEVA": ["M249","AKS-74","M16A4","G3","SCAR-H","AUG","AK-12","SHOT 2 NÒNG","SHOT M1014","PKM","SHOT S12K","M250","ASH-12","QBZ95-1","SHOT M1870","M7","M14","CAR-15","MK47","QJB201"],
+    "GIZMO": ["M249","AKS-74","M16A4","G3","SCAR-H","AUG","AK-12","SHOT 2 NÒNG","SHOT M1014","PKM","SHOT S12K","M250","ASH-12","QBZ95-1","SHOT M1870","M7","M14","CAR-15","MK47","QJB201"]
+  }
+};
+
+const rarityWeights = [
+  { name: 'common', label: 'Common', weight: 70 },
+  { name: 'rare', label: 'Rare', weight: 22 },
+  { name: 'epic', label: 'Epic', weight: 8 }
+];
+
+const specialSpinChance = 0.06;
+
+let history = [];
+let soundEnabled = true;
+let isRolling = false;
+let audioCtx = null;
+let isSpecialSpinActive = false;
+
+function rand(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function weightedRarity() {
+  const total = rarityWeights.reduce((sum, item) => sum + item.weight, 0);
+  let roll = Math.random() * total;
+  for (const item of rarityWeights) {
+    roll -= item.weight;
+    if (roll <= 0) return item;
+  }
+  return rarityWeights[0];
+}
+
+function shouldTriggerSpecialSpin() {
+  return Math.random() < specialSpinChance;
+}
+
+function setStatus(text) {
+  document.getElementById('statusText').innerText = text;
+}
+
+function getRarityIcon(rarity) {
+  if (rarity === 'epic') return '💎';
+  if (rarity === 'rare') return '✨';
+  return '⚪';
+}
+
+function setSlotState(index, { text = '', rarity = null, spinning = false, active = false } = {}) {
+  const slot = document.getElementById(`slot${index}`);
+  const slotText = document.getElementById(`slot${index}Text`);
+  slot.classList.toggle('spinning', spinning);
+  slot.classList.toggle('active', active);
+  slot.classList.remove('rarity-common', 'rarity-rare', 'rarity-epic');
+  slotText.classList.remove('slot-common', 'slot-rare', 'slot-epic');
+
+  if (rarity) {
+    slot.classList.add(`rarity-${rarity}`);
+    slotText.classList.add(`slot-${rarity}`);
+  }
+
+  const icon = rarity ? `<span class="weapon-icon">${getRarityIcon(rarity)}</span>` : '';
+  slotText.innerHTML = `${icon}<span>${text}</span>`;
+}
+
+function updateFinalResult(resultText, rarity, isSpecial = false) {
+  const resultEl = document.getElementById('resultText');
+  const icon = isSpecial ? '🜏' : getRarityIcon(rarity.name);
+  resultEl.innerHTML = `<span class="weapon-icon">${icon}</span><span>${resultText}</span>`;
+  const badge = document.getElementById('rarityBadge');
+  badge.className = `rarity-badge rarity-${rarity.name}`;
+  badge.innerText = isSpecial ? 'Special Epic' : rarity.label;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function ensureAudio() {
+  if (!soundEnabled) return null;
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function beep({ frequency = 440, duration = 80, type = 'square', volume = 0.03 } = {}) {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = frequency;
+  gain.gain.value = volume;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  const now = ctx.currentTime;
+  gain.gain.setValueAtTime(volume, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration / 1000);
+  osc.start(now);
+  osc.stop(now + duration / 1000);
+}
+
+async function playSpinSound() {
+  if (!soundEnabled) return;
+
+  if (isSpecialSpinActive) {
+    beep({ frequency: 260, duration: 90, type: 'sawtooth', volume: 0.02 });
+    await sleep(35);
+    beep({ frequency: 220, duration: 110, type: 'triangle', volume: 0.018 });
+    return;
+  }
+
+  beep({ frequency: 420, duration: 55, type: 'square', volume: 0.022 });
+  await sleep(40);
+  beep({ frequency: 520, duration: 55, type: 'square', volume: 0.02 });
+}
+
+function playEpicFanfare() {
+  if (!soundEnabled) return;
+  beep({ frequency: 660, duration: 140, type: 'triangle', volume: 0.045 });
+  setTimeout(() => beep({ frequency: 880, duration: 160, type: 'triangle', volume: 0.05 }), 110);
+  setTimeout(() => beep({ frequency: 1046, duration: 220, type: 'sine', volume: 0.055 }), 230);
+  setTimeout(() => beep({ frequency: 1320, duration: 320, type: 'triangle', volume: 0.05 }), 420);
+}
+
+function playSpecialFanfare() {
+  if (!soundEnabled) return;
+  beep({ frequency: 180, duration: 260, type: 'sawtooth', volume: 0.03 });
+  setTimeout(() => beep({ frequency: 220, duration: 280, type: 'triangle', volume: 0.028 }), 120);
+  setTimeout(() => beep({ frequency: 330, duration: 220, type: 'sine', volume: 0.032 }), 260);
+  setTimeout(() => beep({ frequency: 523, duration: 260, type: 'triangle', volume: 0.038 }), 430);
+  setTimeout(() => beep({ frequency: 784, duration: 520, type: 'sine', volume: 0.042 }), 620);
+}
+
+function playRevealSound(rarity) {
+  if (!soundEnabled) return;
+  if (rarity.name === 'epic') {
+    playEpicFanfare();
+  } else if (rarity.name === 'rare') {
+    beep({ frequency: 620, duration: 120, type: 'triangle', volume: 0.035 });
+  } else {
+    beep({ frequency: 480, duration: 90, type: 'square', volume: 0.028 });
+  }
+}
+
+function triggerScreenShake() {
+  document.body.classList.remove('shake-screen');
+  void document.body.offsetWidth;
+  document.body.classList.add('shake-screen');
+  setTimeout(() => document.body.classList.remove('shake-screen'), 500);
+}
+
+function triggerSpecialMode(on) {
+  document.body.classList.toggle('special-spin-mode', on);
+}
+
+function spawnEpicParticles(count = 22, isSpecial = false) {
+  const layer = document.getElementById('particles');
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('span');
+    p.className = 'particle';
+    if (isSpecial) p.classList.add('special');
+
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.45;
+    const distance = (isSpecial ? 140 : 80) + Math.random() * (isSpecial ? 280 : 220);
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance;
+    const size = (isSpecial ? 8 : 6) + Math.random() * (isSpecial ? 12 : 8);
+
+    p.style.left = `${centerX}px`;
+    p.style.top = `${centerY}px`;
+    p.style.width = `${size}px`;
+    p.style.height = `${size}px`;
+    p.style.setProperty('--tx', `${tx}px`);
+    p.style.setProperty('--ty', `${ty}px`);
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), isSpecial ? 1800 : 1200);
+  }
+}
+
+function showEpicRewardCard(weapon, resultText, isSpecial = false) {
+  const modal = document.getElementById('rewardModal');
+  document.getElementById('rewardName').innerHTML = `${isSpecial ? '🜏' : '💎'} ${weapon}`;
+  document.getElementById('rewardMeta').innerHTML = `${resultText}<br>Rarity: <b>${isSpecial ? 'SPECIAL EPIC' : 'EPIC'}</b>`;
+  modal.classList.remove('show');
+  modal.classList.toggle('special', isSpecial);
+  void modal.offsetWidth;
+  modal.classList.add('show');
+  setTimeout(() => modal.classList.remove('show'), isSpecial ? 2600 : 1800);
+}
+
+function triggerEpicBurst(slot, weapon, resultText, isSpecial = false) {
+  const overlay = document.getElementById('epicOverlay');
+  const darkFlash = document.getElementById('darkFlash');
+  const banner = document.getElementById('epicBanner');
+
+  slot.classList.remove('epic-burst');
+  void slot.offsetWidth;
+  slot.classList.add('epic-burst');
+
+  overlay.classList.remove('show');
+  darkFlash.classList.remove('show');
+  banner.classList.remove('show');
+  overlay.classList.toggle('special', isSpecial);
+  darkFlash.classList.toggle('special', isSpecial);
+  banner.classList.toggle('special', isSpecial);
+  banner.innerText = isSpecial ? 'ABYSSAL EPIC' : 'NỖ HỦ';
+
+  void overlay.offsetWidth;
+  void darkFlash.offsetWidth;
+  void banner.offsetWidth;
+
+  overlay.classList.add('show');
+  darkFlash.classList.add('show');
+  banner.classList.add('show');
+  spawnEpicParticles(isSpecial ? 38 : 22, isSpecial);
+  showEpicRewardCard(weapon, resultText, isSpecial);
+  if (isSpecial) {
+    playSpecialFanfare();
+  }
+
+  setTimeout(() => {
+    slot.classList.remove('epic-burst');
+    overlay.classList.remove('show');
+    darkFlash.classList.remove('show');
+    banner.classList.remove('show');
+  }, isSpecial ? 2600 : 1800);
+}
+
+async function spinSlot(index, candidates, finalValue, rarity = null, loops = 12, speed = 75, finalResultText = '', isSpecial = false) {
+  const slot = document.getElementById(`slot${index}`);
+  const appliedRarity = isSpecial ? 'epic' : (rarity?.name || null);
+  setSlotState(index, { text: '...', spinning: true, active: true, rarity: appliedRarity });
+
+  for (let i = 0; i < loops; i++) {
+    const value = rand(candidates);
+    setSlotState(index, { text: value, spinning: true, active: true, rarity: appliedRarity });
+    await playSpinSound();
+    await sleep((isSpecial ? speed + 18 : speed) + i * (isSpecial ? 15 : 10));
+  }
+
+  setSlotState(index, { text: finalValue, spinning: false, active: true, rarity: appliedRarity });
+  slot.classList.add('final-lock');
+  triggerScreenShake();
+
+  if (appliedRarity === 'epic') {
+    triggerEpicBurst(slot, finalValue, finalResultText || finalValue, isSpecial);
+  } else {
+    playRevealSound(rarity || { name: 'common' });
+  }
+
+  await sleep(isSpecial ? 320 : 220);
+  slot.classList.remove('active');
+  slot.classList.remove('final-lock');
+}
+
+function generateResult() {
+  const v1 = rand(Object.keys(lootData));
+  const v2 = rand(Object.keys(lootData[v1]));
+  const v3 = rand(lootData[v1][v2]);
+  const isSpecial = shouldTriggerSpecialSpin();
+  const rarity = { name: 'epic', label: isSpecial ? 'Special Epic' : 'Epic' };
+  return { v1, v2, v3, rarity, isSpecial };
+}
+
+function buildKey(result) {
+  return `${result.v1}__${result.v2}__${result.v3}`;
+}
+
+function getUniqueResult() {
+  const recentKeys = new Set(history.slice(0, 10).map(item => item.key));
+  let result = generateResult();
+  let attempts = 0;
+
+  while (recentKeys.has(buildKey(result)) && attempts < 300) {
+    result = generateResult();
+    attempts += 1;
+  }
+
+  return result;
+}
+
+async function roll() {
+  if (isRolling) return;
+  isRolling = true;
+  document.getElementById('rollBtn').disabled = true;
+
+  setStatus('Đang quay Vòng 1...');
+  setSlotState(1, { text: 'Đang quay', spinning: true, active: true });
+  setSlotState(2, { text: 'Chờ V1', spinning: false, active: false });
+  setSlotState(3, { text: 'Chờ V2', spinning: false, active: false });
+
+  const result = getUniqueResult();
+  const finalText = `${result.v1} - ${result.v2} - ${result.v3}`;
+  isSpecialSpinActive = !!result.isSpecial;
+  triggerSpecialMode(isSpecialSpinActive);
+
+  if (result.isSpecial) {
+    setStatus('Một luồng khí lạ bao trùm vòng quay...');
+    await sleep(260);
+  }
+
+  await spinSlot(
+    1,
+    Object.keys(lootData),
+    result.v1,
+    { name: result.isSpecial ? 'epic' : 'common' },
+    result.isSpecial ? 14 : 11,
+    result.isSpecial ? 70 : 55,
+    finalText,
+    result.isSpecial
+  );
+
+  setStatus(result.isSpecial ? 'Bóng tối siết chặt Vòng 2...' : 'Đã khóa V1. Đang quay Vòng 2...');
+  await spinSlot(
+    2,
+    Object.keys(lootData[result.v1]),
+    result.v2,
+    { name: result.isSpecial ? 'epic' : 'rare' },
+    result.isSpecial ? 17 : 13,
+    result.isSpecial ? 82 : 60,
+    finalText,
+    result.isSpecial
+  );
+
+  setStatus(result.isSpecial ? 'Dấu ấn cuối cùng thức tỉnh ở Vòng 3...' : 'Đã khóa V2. Đang quay Vòng 3...');
+  await spinSlot(
+    3,
+    lootData[result.v1][result.v2],
+    result.v3,
+    result.rarity,
+    result.isSpecial ? 22 : 16,
+    result.isSpecial ? 95 : 70,
+    finalText,
+    result.isSpecial
+  );
+
+  const time = new Date().toLocaleTimeString('vi-VN');
+  updateFinalResult(finalText, result.rarity, result.isSpecial);
+  setStatus(result.isSpecial ? 'SPECIAL EPIC đã xuất hiện.' : `Hoàn tất: ${result.rarity.label}`);
+
+  history.unshift({
+    text: finalText,
+    time,
+    rarity: result.rarity,
+    key: buildKey(result),
+    isSpecial: !!result.isSpecial
+  });
+  history = history.slice(0, 50);
+  renderHistory();
+
+  triggerSpecialMode(false);
+  isSpecialSpinActive = false;
+  document.getElementById('rollBtn').disabled = false;
+  isRolling = false;
+}
+
+function renderHistory() {
+  const box = document.getElementById('history');
+  if (history.length === 0) {
+    box.innerHTML = '<div class="empty">Chưa có lượt quay nào.</div>';
+    return;
+  }
+
+  box.innerHTML = history.map((item, index) => `
+    <div class="history-item">
+      <div class="text">#${history.length - index > 0 ? history.length - index : index + 1} · ${item.isSpecial ? '🜏 ' : ''}${item.text}</div>
+      <div class="meta">
+        <span>${item.time}</span>
+        <span class="rarity-badge rarity-${item.rarity.name}">${item.isSpecial ? 'Special Epic' : item.rarity.label}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function resetHistory() {
+  history = [];
+  renderHistory();
+  updateFinalResult('Đã reset kết quả', { name: 'common', label: 'Common' });
+  setSlotState(1, { text: 'Sẵn sàng' });
+  setSlotState(2, { text: 'Chờ V1' });
+  setSlotState(3, { text: 'Chờ V2' });
+  setStatus('Đã reset toàn bộ lịch sử.');
+  triggerSpecialMode(false);
+  isSpecialSpinActive = false;
+}
+
+function exportData() {
+  const lines = history.map((item, index) => `${index + 1}. ${item.text} | ${item.isSpecial ? 'Special Epic' : item.rarity.label} | ${item.time}`);
+  const blob = new Blob([lines.join('\n') || 'Chưa có dữ liệu'], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'loot_history.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundBtn').innerText = `Âm thanh: ${soundEnabled ? 'Bật' : 'Tắt'}`;
+  if (soundEnabled) ensureAudio();
+}
+
+function runSelfChecks() {
+  console.assert(typeof playSpinSound === 'function', 'playSpinSound phải tồn tại');
+  console.assert(buildKey({ v1: 'A', v2: 'B', v3: 'C' }) === 'A__B__C', 'buildKey phải ghép key đúng');
+  console.assert(Array.isArray(lootData['TRINH SÁT']['LUNA']) && lootData['TRINH SÁT']['LUNA'].length > 0, 'Pool TRINH SÁT/LUNA không được rỗng');
+  console.assert(Array.isArray(lootData['XUNG KÍCH']['D-WOLF']) && lootData['XUNG KÍCH']['D-WOLF'].length > 0, 'Pool XUNG KÍCH/D-WOLF không được rỗng');
+  console.assert(Array.isArray(lootData['HỖ TRỢ']['STINGER']) && lootData['HỖ TRỢ']['STINGER'].length > 0, 'Pool HỖ TRỢ/STINGER không được rỗng');
+  console.assert(Array.isArray(lootData['KỸ SƯ']['GIZMO']) && lootData['KỸ SƯ']['GIZMO'].length > 0, 'Pool KỸ SƯ/GIZMO không được rỗng');
+}
+
+renderHistory();
+runSelfChecks();
+</script>
+</body>
+</html>
