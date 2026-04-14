@@ -376,7 +376,7 @@
 <div id="epicBanner" class="epic-drop-banner">EPIC DROP</div>
 <div id="rewardModal" class="reward-modal">
   <div class="reward-card">
-    <div class="reward-top">BẤT NGỜ CHƯA CON</div>
+    <div class="reward-top">THÔNG TIN</div>
     <div id="rewardName" class="reward-name">💎 TÊN VŨ KHÍ</div>
     <div id="rewardMeta" class="reward-meta">Thông tin nhận thưởng</div>
   </div>
@@ -406,24 +406,24 @@
       <div class="slots">
         <div id="slot1" class="slot">
           <div class="slot-label">VÒNG 1</div>
-          <div id="slot1Text" class="slot-window">Sẵn sàng</div>
+          <div id="slot1Text" class="slot-window">TYPE</div>
         </div>
         <div id="slot2" class="slot">
           <div class="slot-label">VÒNG 2</div>
-          <div id="slot2Text" class="slot-window">Chờ V1</div>
+          <div id="slot2Text" class="slot-window">AGENT</div>
         </div>
         <div id="slot3" class="slot">
           <div class="slot-label">VÒNG 3</div>
-          <div id="slot3Text" class="slot-window">Chờ V2</div>
+          <div id="slot3Text" class="slot-window">WEAPONS</div>
         </div>
       </div>
 
-      <div class="status" id="statusText">Hãy bấm Bắt đầu quay.</div>
+      <div class="status" id="statusText">Kết quả sẽ hiển thị ở đây</div>
 
       <div class="final-result">
         <div class="title">KẾT QUẢ CUỐI</div>
-        <div id="resultText" class="value">Chưa có kết quả</div>
-        <div id="rarityBadge" class="rarity-badge rarity-common">Common</div>
+        <div id="resultText" class="value"></div>
+        <div id="rarityBadge" class="rarity-badge rarity-common"></div>
       </div>
     </div>
 
@@ -844,11 +844,11 @@ function renderHistory() {
 function resetHistory() {
   history = [];
   renderHistory();
-  updateFinalResult('Đã reset kết quả', { name: 'common', label: 'Common' });
-  setSlotState(1, { text: 'Sẵn sàng' });
-  setSlotState(2, { text: 'Chờ V1' });
-  setSlotState(3, { text: 'Chờ V2' });
-  setStatus('Đã reset toàn bộ lịch sử.');
+  updateFinalResult('', { name: 'common', label: 'Common' });
+  setSlotState(1, { text: 'TYPE' });
+  setSlotState(2, { text: 'AGENT' });
+  setSlotState(3, { text: 'WEAPONS' });
+  setStatus('Kết quả sẽ hiển thị ở đây');
   triggerSpecialMode(false);
   isSpecialSpinActive = false;
 }
