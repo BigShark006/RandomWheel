@@ -367,6 +367,11 @@
     .reward-card { min-width: 280px; }
     .reward-name { font-size: 24px; }
   }
+
+/* Hide duplicate old select boxes */
+select:not(#customPanel select) {
+  display: none !important;
+}
 </style>
 </head>
 <body>
@@ -383,67 +388,63 @@
 </div>
 
 <div class="container">
-  <div class="hero">
-    <h1>🎰 RANDOM WHEEL PRENIUM</h1>
-    <div class="sub">
-      Đây là vòng quay phục vụ cho sản xuất video. Được xây dựng với mục đích giải trí. Build by <b>BigShark</b>
+  <div class="hero" style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+    <h1 style="margin:0;">🎰 RANDOM WHEEL PRENIUM</h1>
+    <button id="toggleCustomBtn" onclick="toggleCustomPanel()" style="width:52px; height:52px; border-radius:16px; background:rgba(59,130,246,.18); color:#dbeafe; border:1px solid rgba(96,165,250,.28); font-size:22px; display:flex; align-items:center; justify-content:center;">
+      <span id="gearIcon" style="display:inline-block; transition:transform .4s ease;">⚙️</span>
+    </button>
+  </div>
+
+  <div id="customPanel" style="margin-top:16px; padding:14px; border-radius:18px; border:1px solid rgba(148,163,184,.18); background:rgba(2,6,23,.22); max-height:0; opacity:0; overflow:hidden; transform:translateY(-10px) scale(.98); transition:max-height .45s ease, opacity .3s ease, transform .35s ease, padding .35s ease; padding-top:0; padding-bottom:0;">
+    <div style="font-weight:800; font-size:15px; margin-bottom:10px; letter-spacing:.04em; color:#cbd5e1;">KẾT QUẢ TÙY CHỈNH</div>
+    <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px;">
+      <select id="customV1" onchange="updateCustomV2Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
+      <select id="customV2" onchange="updateCustomV3Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
+      <select id="customV3" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
     </div>
-    <div class="controls">
+  </div>
+</div>
+    <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px;">
+      <select id="customV1" onchange="updateCustomV2Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);">
+      </select>
+      <select id="customV2" onchange="updateCustomV3Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);">
+      </select>
+      <select id="customV3" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);">
+      </select>
+    </div>
+    
+  </div>
+
+  
+
+  <div class="panel" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:420px; margin-top:14px;">
+    <div class="slots" style="max-width:760px; width:100%;">
+      <div id="slot1" class="slot">
+        <div class="slot-label">VÒNG 1</div>
+        <div id="slot1Text" class="slot-window">TYPE</div>
+      </div>
+      <div id="slot2" class="slot">
+        <div class="slot-label">VÒNG 2</div>
+        <div id="slot2Text" class="slot-window">?</div>
+      </div>
+      <div id="slot3" class="slot">
+        <div class="slot-label">VÒNG 3</div>
+        <div id="slot3Text" class="slot-window">?</div>
+      </div>
+    </div>
+
+    <div style="margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
       <button id="rollBtn" class="btn-main" onclick="roll()">Bắt đầu quay</button>
       <button id="customRollBtn" class="btn-export" onclick="rollCustom()">Quay theo tùy chỉnh</button>
-      <button class="btn-reset" onclick="resetHistory()">Reset</button>
-      <button class="btn-export" onclick="exportData()">Export kết quả</button>
       <button id="soundBtn" class="btn-sound" onclick="toggleSound()">Âm thanh: Bật</button>
-    </div>
-
-    <div style="margin-top:16px; padding:14px; border-radius:18px; border:1px solid rgba(148,163,184,.18); background:rgba(2,6,23,.28);">
-      <div style="font-weight:800; font-size:15px; margin-bottom:10px;">Kết quả tùy chỉnh</div>
-      <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px;">
-        <select id="customV1" onchange="updateCustomV2Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
-        <select id="customV2" onchange="updateCustomV3Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
-        <select id="customV3" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
-      </div>
-      <div style="margin-top:10px; color:#94a3b8; font-size:13px;">Ví dụ: KỸ SƯ - ULURU - QBZ95-1</div>
-    </div>
-
-    <div class="legend">
-      <span>Quay thường</span>
-      <span>Epic đặc biệt: 6%</span>
-      <span>Không trùng 10 lượt gần nhất</span>
+      <button onclick="toggleHistory()" class="btn-export">Lịch sử</button>
+      <button onclick="resetHistory()" class="btn-reset">Reset</button>
     </div>
   </div>
 
-  <div class="main-grid">
-    <div class="panel">
-      <div class="slots">
-        <div id="slot1" class="slot">
-          <div class="slot-label">VÒNG 1</div>
-          <div id="slot1Text" class="slot-window">Sẵn sàng</div>
-        </div>
-        <div id="slot2" class="slot">
-          <div class="slot-label">VÒNG 2</div>
-          <div id="slot2Text" class="slot-window">?</div>
-        </div>
-        <div id="slot3" class="slot">
-          <div class="slot-label">VÒNG 3</div>
-          <div id="slot3Text" class="slot-window">?</div>
-        </div>
-      </div>
-
-      <div class="status" id="statusText">Hãy bấm Bắt đầu quay.</div>
-
-      <div class="final-result">
-        <div class="title">KẾT QUẢ CUỐI</div>
-        <div id="resultText" class="value"></div>
-        <div id="rarityBadge" class="rarity-badge rarity-common" style="display:none;"></div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div style="font-size: 20px; font-weight: 800;">Lịch sử quay</div>
-      <div style="margin-top: 6px; color: #94a3b8; font-size: 14px;">Hiển thị 50 lượt gần nhất.</div>
-      <div id="history" class="history-list"></div>
-    </div>
+  <div id="historyPanel" class="panel" style="display:none; margin-top:16px;">
+    <div style="font-size:20px; font-weight:800;">LỊCH SỬ QUAY</div>
+    <div id="history" class="history-list"></div>
   </div>
 </div>
 
@@ -507,7 +508,10 @@ function shouldTriggerSpecialSpin() {
 }
 
 function setStatus(text) {
-  document.getElementById('statusText').innerText = text;
+  const statusEl = document.getElementById('statusText');
+  if (statusEl) {
+    statusEl.innerText = text;
+  }
 }
 
 function getRarityIcon(rarity) {
@@ -770,76 +774,117 @@ function getUniqueResult() {
 async function roll() {
   if (isRolling) return;
   isRolling = true;
-  document.getElementById('rollBtn').disabled = true;
 
-  setStatus('Đang quay Vòng 1...');
-  setSlotState(1, { text: 'Đang quay', spinning: true, active: true });
-  setSlotState(2, { text: '?', spinning: false, active: false });
-  setSlotState(3, { text: '?', spinning: false, active: false });
-
-  const result = getUniqueResult();
-  const finalText = `${result.v1} - ${result.v2} - ${result.v3}`;
-  isSpecialSpinActive = !!result.isSpecial;
-  triggerSpecialMode(isSpecialSpinActive);
-
-  if (result.isSpecial) {
-    setStatus('Một luồng khí lạ bao trùm vòng quay...');
-    await sleep(260);
+  const rollBtn = document.getElementById('rollBtn');
+  if (rollBtn) {
+    rollBtn.disabled = true;
   }
 
-  await spinSlot(
-    1,
-    Object.keys(lootData),
-    result.v1,
-    { name: result.isSpecial ? 'epic' : 'common' },
-    result.isSpecial ? 14 : 11,
-    result.isSpecial ? 70 : 55,
-    finalText,
-    result.isSpecial
-  );
+  try {
+    setStatus('Đang quay Vòng 1...');
+    setSlotState(1, { text: 'Đang quay', spinning: true, active: true });
+    setSlotState(2, { text: '?', spinning: false, active: false });
+    setSlotState(3, { text: '?', spinning: false, active: false });
 
-  setStatus(result.isSpecial ? 'Bóng tối siết chặt Vòng 2...' : 'Đã khóa V1. Đang quay Vòng 2...');
-  await spinSlot(
-    2,
-    Object.keys(lootData[result.v1]),
-    result.v2,
-    { name: result.isSpecial ? 'epic' : 'rare' },
-    result.isSpecial ? 17 : 13,
-    result.isSpecial ? 82 : 60,
-    finalText,
-    result.isSpecial
-  );
+    const result = getUniqueResult();
+    const finalText = `${result.v1} - ${result.v2} - ${result.v3}`;
+    isSpecialSpinActive = !!result.isSpecial;
+    triggerSpecialMode(isSpecialSpinActive);
 
-  setStatus(result.isSpecial ? 'Dấu ấn cuối cùng thức tỉnh ở Vòng 3...' : 'Đã khóa V2. Đang quay Vòng 3...');
-  await spinSlot(
-    3,
-    lootData[result.v1][result.v2],
-    result.v3,
-    result.rarity,
-    result.isSpecial ? 22 : 16,
-    result.isSpecial ? 95 : 70,
-    finalText,
-    result.isSpecial
-  );
+    if (result.isSpecial) {
+      setStatus('Một luồng khí lạ bao trùm vòng quay...');
+      await sleep(260);
+    }
 
-  const time = new Date().toLocaleTimeString('vi-VN');
-  updateFinalResult(finalText, result.rarity, result.isSpecial);
-  setStatus(result.isSpecial ? 'SPECIAL EPIC đã xuất hiện.' : `Hoàn tất: ${result.rarity.label}`);
+    await spinSlot(
+      1,
+      Object.keys(lootData),
+      result.v1,
+      { name: result.isSpecial ? 'epic' : 'common' },
+      result.isSpecial ? 14 : 11,
+      result.isSpecial ? 70 : 55,
+      finalText,
+      result.isSpecial
+    );
 
-  history.unshift({
-    text: finalText,
-    time,
-    rarity: result.rarity,
-    key: buildKey(result),
-    isSpecial: !!result.isSpecial
-  });
-  history = history.slice(0, 50);
-  renderHistory();
+    setStatus(result.isSpecial ? 'Bóng tối siết chặt Vòng 2...' : 'Đã khóa V1. Đang quay Vòng 2...');
+    await spinSlot(
+      2,
+      Object.keys(lootData[result.v1]),
+      result.v2,
+      { name: result.isSpecial ? 'epic' : 'rare' },
+      result.isSpecial ? 17 : 13,
+      result.isSpecial ? 82 : 60,
+      finalText,
+      result.isSpecial
+    );
 
-  triggerSpecialMode(false);
-  isSpecialSpinActive = false;
-  document.getElementById('rollBtn').disabled = false;
-  isRolling = false;
+    setStatus(result.isSpecial ? 'Dấu ấn cuối cùng thức tỉnh ở Vòng 3...' : 'Đã khóa V2. Đang quay Vòng 3...');
+    await spinSlot(
+      3,
+      lootData[result.v1][result.v2],
+      result.v3,
+      result.rarity,
+      result.isSpecial ? 22 : 16,
+      result.isSpecial ? 95 : 70,
+      finalText,
+      result.isSpecial
+    );
+
+    const time = new Date().toLocaleTimeString('vi-VN');
+    updateFinalResult(finalText, result.rarity, result.isSpecial);
+    setStatus(result.isSpecial ? 'SPECIAL EPIC đã xuất hiện.' : `Hoàn tất: ${result.rarity.label}`);
+
+    history.unshift({
+      text: finalText,
+      time,
+      rarity: result.rarity,
+      key: buildKey(result),
+      isSpecial: !!result.isSpecial
+    });
+    history = history.slice(0, 50);
+    renderHistory();
+  } catch (error) {
+    console.error(error);
+  } finally {
+    triggerSpecialMode(false);
+    isSpecialSpinActive = false;
+    isRolling = false;
+    if (rollBtn) {
+      rollBtn.disabled = false;
+    }
+  }
+}
+
+function toggleCustomPanel() {
+  const panel = document.getElementById('customPanel');
+  const btn = document.getElementById('toggleCustomBtn');
+  const isOpen = panel.dataset.open === 'true';
+
+  if (isOpen) {
+    panel.dataset.open = 'false';
+    panel.style.maxHeight = '0px';
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateY(-10px) scale(.98)';
+    panel.style.paddingTop = '0px';
+    panel.style.paddingBottom = '0px';
+    const gear = document.getElementById('gearIcon');
+    if (gear) gear.style.transform = 'rotate(0deg)';
+  } else {
+    panel.dataset.open = 'true';
+    panel.style.maxHeight = panel.scrollHeight + 'px';
+    panel.style.opacity = '1';
+    panel.style.transform = 'translateY(0) scale(1)';
+    panel.style.paddingTop = '14px';
+    panel.style.paddingBottom = '14px';
+    const gear = document.getElementById('gearIcon');
+    if (gear) gear.style.transform = 'rotate(180deg)';
+  }
+}
+
+function toggleHistory() {
+  const panel = document.getElementById('historyPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
 function renderHistory() {
@@ -893,16 +938,33 @@ function exportData() {
 }
 
 function buildForcedResult() {
-  const v1 = document.getElementById('customV1').value;
-  const v2 = document.getElementById('customV2').value;
-  const v3 = document.getElementById('customV3').value;
-  if (!v1 || !v2 || !v3) return null;
+  const v1Selected = document.getElementById('customV1')?.value || '';
+  const v2Selected = document.getElementById('customV2')?.value || '';
+  const v3Selected = document.getElementById('customV3')?.value || '';
+
+  if (!v1Selected) return null;
+
+  const v1 = v1Selected;
+  const v2Pool = lootData[v1] ? Object.keys(lootData[v1]) : [];
+  if (v2Pool.length === 0) return null;
+
+  const v2 = v2Selected && v2Pool.includes(v2Selected) ? v2Selected : rand(v2Pool);
+  const v3Pool = lootData[v1] && lootData[v1][v2] ? lootData[v1][v2] : [];
+  if (v3Pool.length === 0) return null;
+
+  const v3 = v3Selected && v3Pool.includes(v3Selected) ? v3Selected : rand(v3Pool);
+
   return {
     v1,
     v2,
     v3,
     rarity: { name: 'epic', label: 'Epic' },
-    isSpecial: false
+    isSpecial: false,
+    forcedLevels: {
+      v1: !!v1Selected,
+      v2: !!v2Selected,
+      v3: !!v3Selected
+    }
   };
 }
 
