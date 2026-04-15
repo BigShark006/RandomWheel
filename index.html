@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Loot Spinner Pro</title>
+<title>Random Wheel Premium</title>
 <style>
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-transform: uppercase;
     background:
       radial-gradient(circle at top, rgba(59,130,246,0.2), transparent 30%),
       linear-gradient(135deg, #020617, #0f172a 45%, #111827);
@@ -390,10 +390,22 @@
     </div>
     <div class="controls">
       <button id="rollBtn" class="btn-main" onclick="roll()">Bắt đầu quay</button>
+      <button id="customRollBtn" class="btn-export" onclick="rollCustom()">Quay theo tùy chỉnh</button>
       <button class="btn-reset" onclick="resetHistory()">Reset</button>
       <button class="btn-export" onclick="exportData()">Export kết quả</button>
       <button id="soundBtn" class="btn-sound" onclick="toggleSound()">Âm thanh: Bật</button>
     </div>
+
+    <div style="margin-top:16px; padding:14px; border-radius:18px; border:1px solid rgba(148,163,184,.18); background:rgba(2,6,23,.28);">
+      <div style="font-weight:800; font-size:15px; margin-bottom:10px;">Kết quả tùy chỉnh</div>
+      <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px;">
+        <select id="customV1" onchange="updateCustomV2Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
+        <select id="customV2" onchange="updateCustomV3Options()" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
+        <select id="customV3" style="padding:12px; border-radius:12px; background:#0f172a; color:#e5e7eb; border:1px solid rgba(148,163,184,.25);"></select>
+      </div>
+      <div style="margin-top:10px; color:#94a3b8; font-size:13px;">Ví dụ: KỸ SƯ - ULURU - QBZ95-1</div>
+    </div>
+
     <div class="legend">
       <span>Quay thường</span>
       <span>Epic đặc biệt: 6%</span>
@@ -406,24 +418,24 @@
       <div class="slots">
         <div id="slot1" class="slot">
           <div class="slot-label">VÒNG 1</div>
-          <div id="slot1Text" class="slot-window">TYPE</div>
+          <div id="slot1Text" class="slot-window">Sẵn sàng</div>
         </div>
         <div id="slot2" class="slot">
           <div class="slot-label">VÒNG 2</div>
-          <div id="slot2Text" class="slot-window">AGENT</div>
+          <div id="slot2Text" class="slot-window">?</div>
         </div>
         <div id="slot3" class="slot">
           <div class="slot-label">VÒNG 3</div>
-          <div id="slot3Text" class="slot-window">WEAPONS</div>
+          <div id="slot3Text" class="slot-window">?</div>
         </div>
       </div>
 
-      <div class="status" id="statusText">Kết quả sẽ hiển thị ở đây</div>
+      <div class="status" id="statusText">Hãy bấm Bắt đầu quay.</div>
 
       <div class="final-result">
         <div class="title">KẾT QUẢ CUỐI</div>
         <div id="resultText" class="value"></div>
-        <div id="rarityBadge" class="rarity-badge rarity-common"></div>
+        <div id="rarityBadge" class="rarity-badge rarity-common" style="display:none;"></div>
       </div>
     </div>
 
@@ -439,7 +451,7 @@
 const lootData = {
   "TRINH SÁT": {
     "LUNA": ["K416","MARLIN LEVER","AKS-74","SHOT 2 NÒNG","CAR-15","UZI","BIZON","MINI-14","SMG-45","AWM","SG552","SVD","SHOT M1014","PSG-1","SHOT M1870","PTR-32","AUG","SR9","SHOT S12K","SV-98","M700","VSS","M16A4","SR-25","R93","SKS","SCAR-H"],
-    "HACKCLAW": ["K416","MARLIN LEVER","AKS-74","SHOT 2 NÒNG","CAR-15","UZI","BIZON","MINI-14","SMG-45","AWM","SG552","SVD","SHOT M1014","PSG-1","SHOT M1870","PTR-32","AUG","SR9","SHOT S12K","SV-98","M700","VSS","M16A4","SR-25","R93","SKS","SCAR-H"],
+    "HACKCLAW": ["K416","MARLIN LEVER","AKS-74","SHOT 2 NÒNG","CAR-15","UZI","BIZON","MINI-14","SMG-45","AWM","SG552","SVD","SHOT M1014","PSG-1","SHOT M1870","PTR-32","AUG","SR9","SHOT S12K","SV-98","M700","VSS","M16A4","SR-25","R93","SKS","SCAR-H","QBZ95-1"],
     "RAPTOR": ["K416","MARLIN LEVER","AKS-74","SHOT 2 NÒNG","CAR-15","UZI","BIZON","MINI-14","SMG-45","AWM","SG552","SVD","SHOT M1014","PSG-1","SHOT M1870","PTR-32","AUG","SR9","SHOT S12K","SV-98","M700","VSS","M16A4","SR-25","R93","SKS","SCAR-H"]
   },
   "XUNG KÍCH": {
@@ -474,6 +486,7 @@ let soundEnabled = true;
 let isRolling = false;
 let audioCtx = null;
 let isSpecialSpinActive = false;
+let forcedResult = null;
 
 function rand(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -522,11 +535,11 @@ function setSlotState(index, { text = '', rarity = null, spinning = false, activ
 
 function updateFinalResult(resultText, rarity, isSpecial = false) {
   const resultEl = document.getElementById('resultText');
-  const icon = isSpecial ? '🜏' : getRarityIcon(rarity.name);
-  resultEl.innerHTML = `<span class="weapon-icon">${icon}</span><span>${resultText}</span>`;
   const badge = document.getElementById('rarityBadge');
-  badge.className = `rarity-badge rarity-${rarity.name}`;
-  badge.innerText = isSpecial ? 'Special Epic' : rarity.label;
+  resultEl.innerHTML = '';
+  if (badge) {
+    badge.style.display = 'none';
+  }
 }
 
 function sleep(ms) {
@@ -672,7 +685,7 @@ function triggerEpicBurst(slot, weapon, resultText, isSpecial = false) {
   overlay.classList.toggle('special', isSpecial);
   darkFlash.classList.toggle('special', isSpecial);
   banner.classList.toggle('special', isSpecial);
-  banner.innerText = isSpecial ? 'ABYSSAL EPIC' : 'NỖ HỦ';
+  banner.innerText = isSpecial ? 'ABYSSAL EPIC' : 'EPIC DROP';
 
   void overlay.offsetWidth;
   void darkFlash.offsetWidth;
@@ -736,6 +749,12 @@ function buildKey(result) {
 }
 
 function getUniqueResult() {
+  if (forcedResult) {
+    const result = forcedResult;
+    forcedResult = null;
+    return result;
+  }
+
   const recentKeys = new Set(history.slice(0, 10).map(item => item.key));
   let result = generateResult();
   let attempts = 0;
@@ -755,8 +774,8 @@ async function roll() {
 
   setStatus('Đang quay Vòng 1...');
   setSlotState(1, { text: 'Đang quay', spinning: true, active: true });
-  setSlotState(2, { text: 'Chờ V1', spinning: false, active: false });
-  setSlotState(3, { text: 'Chờ V2', spinning: false, active: false });
+  setSlotState(2, { text: '?', spinning: false, active: false });
+  setSlotState(3, { text: '?', spinning: false, active: false });
 
   const result = getUniqueResult();
   const finalText = `${result.v1} - ${result.v2} - ${result.v3}`;
@@ -844,10 +863,20 @@ function renderHistory() {
 function resetHistory() {
   history = [];
   renderHistory();
-  updateFinalResult('', { name: 'common', label: 'Common' });
+
+  const resultEl = document.getElementById('resultText');
+  const badge = document.getElementById('rarityBadge');
+  if (resultEl) {
+    resultEl.innerHTML = '';
+  }
+  if (badge) {
+    badge.innerHTML = '';
+    badge.style.display = 'none';
+  }
+
   setSlotState(1, { text: 'TYPE' });
-  setSlotState(2, { text: 'AGENT' });
-  setSlotState(3, { text: 'WEAPONS' });
+  setSlotState(2, { text: '?' });
+  setSlotState(3, { text: '?' });
   setStatus('Kết quả sẽ hiển thị ở đây');
   triggerSpecialMode(false);
   isSpecialSpinActive = false;
@@ -863,6 +892,65 @@ function exportData() {
   URL.revokeObjectURL(a.href);
 }
 
+function buildForcedResult() {
+  const v1 = document.getElementById('customV1').value;
+  const v2 = document.getElementById('customV2').value;
+  const v3 = document.getElementById('customV3').value;
+  if (!v1 || !v2 || !v3) return null;
+  return {
+    v1,
+    v2,
+    v3,
+    rarity: { name: 'epic', label: 'Epic' },
+    isSpecial: false
+  };
+}
+
+function updateSelectOptions(selectId, values, placeholder) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = '';
+  const first = document.createElement('option');
+  first.value = '';
+  first.textContent = placeholder;
+  select.appendChild(first);
+  values.forEach(value => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+}
+
+function updateCustomV2Options() {
+  const v1 = document.getElementById('customV1').value;
+  const v2Values = v1 && lootData[v1] ? Object.keys(lootData[v1]) : [];
+  updateSelectOptions('customV2', v2Values, 'Chọn V2');
+  updateSelectOptions('customV3', [], 'Chọn V3');
+}
+
+function updateCustomV3Options() {
+  const v1 = document.getElementById('customV1').value;
+  const v2 = document.getElementById('customV2').value;
+  const v3Values = v1 && v2 && lootData[v1] && lootData[v1][v2] ? lootData[v1][v2] : [];
+  updateSelectOptions('customV3', v3Values, 'Chọn V3');
+}
+
+function initCustomSelectors() {
+  updateSelectOptions('customV1', Object.keys(lootData), 'Chọn V1');
+  updateSelectOptions('customV2', [], 'Chọn V2');
+  updateSelectOptions('customV3', [], 'Chọn V3');
+}
+
+async function rollCustom() {
+  const custom = buildForcedResult();
+  if (!custom) {
+    setStatus('Hãy chọn đủ V1, V2 và V3 trước khi quay tùy chỉnh.');
+    return;
+  }
+  forcedResult = custom;
+  await roll();
+}
+
 function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById('soundBtn').innerText = `Âm thanh: ${soundEnabled ? 'Bật' : 'Tắt'}`;
@@ -876,9 +964,12 @@ function runSelfChecks() {
   console.assert(Array.isArray(lootData['XUNG KÍCH']['D-WOLF']) && lootData['XUNG KÍCH']['D-WOLF'].length > 0, 'Pool XUNG KÍCH/D-WOLF không được rỗng');
   console.assert(Array.isArray(lootData['HỖ TRỢ']['STINGER']) && lootData['HỖ TRỢ']['STINGER'].length > 0, 'Pool HỖ TRỢ/STINGER không được rỗng');
   console.assert(Array.isArray(lootData['KỸ SƯ']['GIZMO']) && lootData['KỸ SƯ']['GIZMO'].length > 0, 'Pool KỸ SƯ/GIZMO không được rỗng');
+  const testKey = buildKey({ v1: 'KỸ SƯ', v2: 'ULURU', v3: 'QBZ95-1' });
+  console.assert(testKey === 'KỸ SƯ__ULURU__QBZ95-1', 'Key tùy chỉnh phải đúng định dạng');
 }
 
 renderHistory();
+initCustomSelectors();
 runSelfChecks();
 </script>
 </body>
